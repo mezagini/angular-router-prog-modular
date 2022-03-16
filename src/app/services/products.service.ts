@@ -10,6 +10,6 @@ export class ProductsService {
   constructor(private _http: HttpClient) { }
 
   getAllProducts() {
-    return this._http.get<Product[]>('https://fakestoreapi.com/products');
+    return this._http.get<Product[]>('https://young-sands-07814.herokuapp.com/api/products');
   }
 }
