@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Product } from 'src/app/models/product.model';
+import { CreateProductDTO, Product, UpdateProductDTO } from 'src/app/models/product.model';
 import { ProductsService } from 'src/app/services/products.service';
 import { StoreService } from 'src/app/services/store.service';
 
@@ -66,6 +66,61 @@ export class ProductsComponent implements OnInit {
         },
         error: (error) => {
           console.error(error);
+
+        }
+      })
+  }
+
+  createNewProduct() {
+    const product: CreateProductDTO = {
+      price: 0,
+      images: [],
+      title: '',
+      categoryId: 1,
+      description: ''
+    }
+
+    this._productsService.create(product)
+      .subscribe({
+        next: (product) => {
+          this.onAddToShoppingCart(product);
+        },
+        error: () => {
+
+        }
+      })
+
+  }
+
+  updateProduct() {
+    const changes: UpdateProductDTO = {
+
+    }
+    const id = this.productChosen.id;
+    this._productsService.update(id, changes)
+      .subscribe({
+        next: (product) => {
+          const productIndex = this.products.findIndex(item => item.id === this.productChosen.id);
+          this.products[productIndex] = product;
+          this.productChosen = product;
+        },
+        error: () => {
+
+        }
+      })
+
+  }
+
+  deleteProduct() {
+    const id = this.productChosen.id;
+    this._productsService.delete(id)
+      .subscribe({
+        next: () => {
+          const productIndex = this.products.findIndex(item => item.id === this.productChosen.id);
+          this.products.splice(productIndex, 1);
+          this.showProductDetail = false;
+        },
+        error: () => {
 
         }
       })
