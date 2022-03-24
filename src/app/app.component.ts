@@ -1,60 +1,46 @@
-import { Component, OnInit } from '@angular/core';
-import { AuthService } from './services/auth.service';
+import { Component } from '@angular/core';
+
 import { UsersService } from './services/users.service';
+import { FilesService } from './services/files.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
-  title = 'my-store';
+export class AppComponent {
+  imgRta = '';
 
-  ngOnInit(): void {
-    throw new Error('Method not implemented.');
-  }
-
-  constructor(private _userService: UsersService, private _authService: AuthService) {
-
-  }
+  constructor(
+    private usersService: UsersService,
+    private filesService: FilesService
+  ) {}
 
   createUser() {
-    this._userService.create({
-      name: 'Daniel',
-      email: '',
-      password: ''
+    this.usersService.create({
+      name: 'Sebas',
+      email: 'sebas@mail.com',
+      password: '1212'
     })
-      .subscribe({
-        next: () => {
-
-        },
-        error: () => {
-
-        }
-      });
+    .subscribe(rta => {
+      console.log(rta);
+    });
   }
 
-  login() {
-    this._authService.login( 'asd', 'as')
-      .subscribe({
-        next: (res) => {
-          
-        },
-        error: () => {
-
-        }
-      });
+  downloadPdf() {
+    this.filesService.getFile('my.pdf', 'https://young-sands-07814.herokuapp.com/api/files/dummy.pdf', 'application/pdf')
+    .subscribe()
   }
 
-  getProfile() {
-    this._authService.profile()
-      .subscribe({
-        next: () => {
+  onUpload(event: Event) {
+    const element = event.target as HTMLInputElement;
+    const file = element.files?.item(0);
+    if (file) {
+      this.filesService.uploadFile(file)
+      .subscribe(rta => {
+        this.imgRta = rta.location;
+      });
+    }
 
-        },
-        error: () => {
-
-        }
-      })
   }
 }

@@ -1,56 +1,40 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
-import { StoreService } from 'src/app/services/store.service';
+import { Component, OnInit } from '@angular/core';
+
+import { StoreService } from '../../services/store.service'
+import { AuthService } from '../../services/auth.service';
+import { User } from '../../models/user.model';
 
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.scss']
 })
-export class NavComponent implements OnInit, OnDestroy {
+export class NavComponent implements OnInit {
 
-  activeMenu: boolean = false;
+  activeMenu = false;
   counter = 0;
+  profile: User | null = null;
 
-  subscription!: Subscription;
-  subscriptions!: Subscription[];
-
-
-  constructor(private _storeService: StoreService) { }
-
-  ngOnDestroy(): void {
-
-    // Si se tendrán más subscripciones
-    this.subscriptions.forEach(sub => {
-      if (sub !== null) {
-        sub.unsubscribe()
-      }
-    });
-
-    // Manejar una sola subscripción
-    this.subscription ? this.subscription.unsubscribe() : null;
-
-  }
+  constructor(
+    private storeService: StoreService,
+    private authService: AuthService,
+  ) { }
 
   ngOnInit(): void {
-
-    // Si se tendrán más subscripciones
-    this.subscriptions = [
-      this.getMyCartLength()
-    ]
-
-    // Manejar una sola subscripción
-    this.subscription = this.getMyCartLength()
-  }
-
-  getMyCartLength(): Subscription {
-    return this._storeService.myCart$
-      .subscribe(products => {
-        this.counter = products.length;
-      });
+    this.storeService.myCart$.subscribe(products => {
+      this.counter = products.length;
+    });
   }
 
   toggleMenu() {
     this.activeMenu = !this.activeMenu;
   }
+
+  login() {
+    this.authService.loginAndGet('john@mail.com', 'changeme')
+    .subscribe(user => {
+      this.profile = user;
+    });
+  }
+
 }

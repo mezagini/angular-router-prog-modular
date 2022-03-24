@@ -1,50 +1,47 @@
 import { Component, OnInit } from '@angular/core';
-import { CreateProductDTO, Product, UpdateProductDTO } from 'src/app/models/product.model';
-import { ProductsService } from 'src/app/services/products.service';
-import { StoreService } from 'src/app/services/store.service';
+import { switchMap } from 'rxjs/operators';
+
+import {
+  Product,
+  CreateProductDTO,
+  UpdateProductDTO,
+} from '../../models/product.model';
+
+import { StoreService } from '../../services/store.service';
+import { ProductsService } from '../../services/products.service';
 
 @Component({
   selector: 'app-products',
   templateUrl: './products.component.html',
-  styleUrls: ['./products.component.scss']
+  styleUrls: ['./products.component.scss'],
 })
 export class ProductsComponent implements OnInit {
-
-  total: number = 0;
   myShoppingCart: Product[] = [];
+  total = 0;
   products: Product[] = [];
-  showProductDetail: boolean = false;
-  productChosen: Product = {
-    id: '',
-    price: 0,
-    images: [],
-    title: '',
-    category: {
-      id: '',
-      name: ''
-    },
-    description: ''
-  };
-
+  showProductDetail = false;
+  productChosen: Product | null = null;
   limit = 10;
   offset = 0;
-
   statusDetail: 'loading' | 'success' | 'error' | 'init' = 'init';
 
   constructor(
-    private _storeService: StoreService,
-    private _productsService: ProductsService,
+    private storeService: StoreService,
+    private productsService: ProductsService
   ) {
+    this.myShoppingCart = this.storeService.getShoppingCart();
   }
 
   ngOnInit(): void {
-    this.loadMore();
+    this.productsService.getAll(10, 0).subscribe((data) => {
+      this.products = data;
+      this.offset += this.limit;
+    });
   }
 
   onAddToShoppingCart(product: Product) {
-    this._storeService.addProduct(product);
-    this.myShoppingCart = this._storeService.getShoppingCart;
-    this.total = this._storeService.getTotal();
+    this.storeService.addProduct(product);
+    this.total = this.storeService.getTotal();
   }
 
   toggleProductDetail() {
@@ -53,92 +50,65 @@ export class ProductsComponent implements OnInit {
 
   onShowDetail(id: string) {
     this.statusDetail = 'loading';
-    this._productsService.getProduct(id)
-      .subscribe({
-        next: (product) => {
-          this.toggleProductDetail();
-          this.productChosen = product;
-
-          this.statusDetail = 'success';
-
-        },
-        error: (error) => {
-          this.statusDetail = 'error';
-
-          console.error(error);
-
-        }
-      })
+    this.toggleProductDetail();
+    this.productsService.getOne(id).subscribe(
+      (data) => {
+        this.productChosen = data;
+        this.statusDetail = 'success';
+      },
+      (errorMsg) => {
+        window.alert(errorMsg);
+        this.statusDetail = 'error';
+      }
+    );
   }
 
   createNewProduct() {
     const product: CreateProductDTO = {
-      price: 0,
-      images: [],
-      title: '',
-      categoryId: 1,
-      description: ''
-    }
-
-    this._productsService.create(product)
-      .subscribe({
-        next: (product) => {
-          this.onAddToShoppingCart(product);
-        },
-        error: () => {
-
-        }
-      })
-
+      title: 'Nuevo prodcuto',
+      description: 'bla bla bla',
+      images: [`https://placeimg.com/640/480/any?random=${Math.random()}`],
+      price: 1000,
+      categoryId: 2,
+    };
+    this.productsService.create(product).subscribe((data) => {
+      this.products.unshift(data);
+    });
   }
 
   updateProduct() {
-    const changes: UpdateProductDTO = {
-
+    if (this.productChosen) {
+      const changes: UpdateProductDTO = {
+        title: 'change title',
+      };
+      const id = this.productChosen?.id;
+      this.productsService.update(id, changes).subscribe((data) => {
+        const productIndex = this.products.findIndex(
+          (item) => item.id === this.productChosen?.id
+        );
+        this.products[productIndex] = data;
+        this.productChosen = data;
+      });
     }
-    const id = this.productChosen.id;
-    this._productsService.update(id, changes)
-      .subscribe({
-        next: (product) => {
-          const productIndex = this.products.findIndex(item => item.id === this.productChosen.id);
-          this.products[productIndex] = product;
-          this.productChosen = product;
-        },
-        error: () => {
-
-        }
-      })
-
   }
 
   deleteProduct() {
-    const id = this.productChosen.id;
-    this._productsService.delete(id)
-      .subscribe({
-        next: () => {
-          const productIndex = this.products.findIndex(item => item.id === this.productChosen.id);
-          this.products.splice(productIndex, 1);
-          this.showProductDetail = false;
-        },
-        error: () => {
-
-        }
-      })
+    if (this.productChosen) {
+      const id = this.productChosen?.id;
+      this.productsService.delete(id).subscribe(() => {
+        const productIndex = this.products.findIndex(
+          (item) => item.id === this.productChosen?.id
+        );
+        this.products.splice(productIndex, 1);
+        this.showProductDetail = false;
+      });
+    }
   }
 
   loadMore() {
-    this._productsService.getAllProducts(this.limit, this.offset)
-      .subscribe({
-        next: (products) => {
-          this.products = [...this.products, ...products];
-          this.offset += this.limit;
-        },
-        error: (error) => {
-          console.error(error);
-        },
-        complete: () => {
-
-        }
-      });
+    this.productsService.getAll(this.limit, this.offset).subscribe((data) => {
+      this.products = this.products.concat(data);
+      this.offset += this.limit;
+    });
   }
 }

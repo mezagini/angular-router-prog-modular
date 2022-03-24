@@ -1,61 +1,75 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable, retry } from 'rxjs';
-import { environment } from 'src/environments/environment';
-import { CreateProductDTO, Product, UpdateProductDTO } from '../models/product.model';
+import { HttpClient, HttpParams, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { retry, catchError, map } from 'rxjs/operators';
+import { throwError, zip } from 'rxjs';
+
+import { Product, CreateProductDTO, UpdateProductDTO } from './../models/product.model';
+import { checkTime } from './../interceptors/time.interceptor';
+import { environment } from './../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductsService {
 
-  private apiUrl = `${environment.apiUrl}/api/products`;
+  private apiUrl = `${environment.API_URL}/api/products`;
 
-  constructor(private _http: HttpClient) { }
+  constructor(
+    private http: HttpClient
+  ) { }
 
-  getAllProducts(limit?: number, offset?: number): Observable<Product[]> {
-
+  getAll(limit?: number, offset?: number) {
     let params = new HttpParams();
     if (limit && offset) {
       params = params.set('limit', limit);
-      params = params.set('offset', offset);
+      params = params.set('offset', limit);
     }
-    return this._http.get<Product[]>(this.apiUrl)
-      .pipe(
-        map(products => {
-          return products.map(product => {
-            return {
-              ...product,
-              taxes: product.price * .16
-            }
-          })
-        })
-      );
-  }
-
-  getProduct(id: string) {
-    return this._http.get<Product>(`${this.apiUrl}/${id}`);
-  }
-
-  getProductsByPage(limit: number, offset: number) {
-    return this._http.get<Product[]>(`${this.apiUrl}`, {
-      params: {limit, offset}
-    })
+    return this.http.get<Product[]>(this.apiUrl, { params, context: checkTime() })
     .pipe(
-      retry(3)
+      retry(3),
+      map(products => products.map(item => {
+        return {
+          ...item,
+          taxes: .19 * item.price
+        }
+      }))
     );
   }
 
-  create(product: CreateProductDTO) {
-    return this._http.post<Product>(this.apiUrl, product);
+  fetchReadAndUpdate(id: string, dto: UpdateProductDTO) {
+    return zip(
+      this.getOne(id),
+      this.update(id, dto)
+    );
   }
 
-  update(id: string, product: UpdateProductDTO) {
-    return this._http.put<Product>(this.apiUrl, product);
+  getOne(id: string) {
+    return this.http.get<Product>(`${this.apiUrl}/${id}`)
+    .pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === HttpStatusCode.Conflict) {
+          return throwError('Algo esta fallando en el server');
+        }
+        if (error.status === HttpStatusCode.NotFound) {
+          return throwError('El producto no existe');
+        }
+        if (error.status === HttpStatusCode.Unauthorized) {
+          return throwError('No estas permitido');
+        }
+        return throwError('Ups algo salio mal');
+      })
+    )
+  }
+
+  create(dto: CreateProductDTO) {
+    return this.http.post<Product>(this.apiUrl, dto);
+  }
+
+  update(id: string, dto: UpdateProductDTO) {
+    return this.http.put<Product>(`${this.apiUrl}/${id}`, dto);
   }
 
   delete(id: string) {
-    return this._http.delete<Product>(`${this.apiUrl}/${id}`);
+    return this.http.delete<boolean>(`${this.apiUrl}/${id}`);
   }
-
 }
