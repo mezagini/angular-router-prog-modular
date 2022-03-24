@@ -1,5 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { retry } from 'rxjs';
 import { CreateProductDTO, Product, UpdateProductDTO } from '../models/product.model';
 
 @Injectable({
@@ -7,16 +8,31 @@ import { CreateProductDTO, Product, UpdateProductDTO } from '../models/product.m
 })
 export class ProductsService {
 
-  private apiUrl = 'https://young-sands-07814.herokuapp.com/api/products';
+  private apiUrl = '/api/products';
 
   constructor(private _http: HttpClient) { }
 
-  getAllProducts() {
+  getAllProducts(limit?: number, offset?: number) {
+
+    let params = new HttpParams();
+    if (limit && offset) {
+      params = params.set('limit', limit);
+      params = params.set('offset', offset);
+    }
     return this._http.get<Product[]>(this.apiUrl);
   }
 
   getProduct(id: string) {
     return this._http.get<Product>(`${this.apiUrl}/${id}`);
+  }
+
+  getProductsByPage(limit: number, offset: number) {
+    return this._http.get<Product[]>(`${this.apiUrl}`, {
+      params: {limit, offset}
+    })
+    .pipe(
+      retry(3)
+    );
   }
 
   create(product: CreateProductDTO) {

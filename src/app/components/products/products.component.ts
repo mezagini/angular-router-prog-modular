@@ -24,27 +24,19 @@ export class ProductsComponent implements OnInit {
       name: ''
     },
     description: ''
-  }
+  };
+
+  limit = 10;
+  offset = 0;
 
   constructor(
     private _storeService: StoreService,
     private _productsService: ProductsService,
   ) {
-   }
+  }
 
   ngOnInit(): void {
-    this._productsService.getAllProducts()
-      .subscribe({
-        next:(products) => {
-          this.products = products;
-        },
-        error: (error) => {
-          console.error(error);
-        },
-        complete: () => {
-
-        }
-      });
+    this.loadMore();
   }
 
   onAddToShoppingCart(product: Product) {
@@ -124,5 +116,21 @@ export class ProductsComponent implements OnInit {
 
         }
       })
+  }
+
+  loadMore() {
+    this._productsService.getProductsByPage(this.limit, this.offset)
+      .subscribe({
+        next: (products) => {
+          this.products = [...this.products, ...products];
+          this.offset += this.limit;
+        },
+        error: (error) => {
+          console.error(error);
+        },
+        complete: () => {
+
+        }
+      });
   }
 }
