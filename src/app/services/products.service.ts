@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { retry } from 'rxjs';
+import { map, Observable, retry } from 'rxjs';
+import { environment } from 'src/environments/environment';
 import { CreateProductDTO, Product, UpdateProductDTO } from '../models/product.model';
 
 @Injectable({
@@ -8,18 +9,28 @@ import { CreateProductDTO, Product, UpdateProductDTO } from '../models/product.m
 })
 export class ProductsService {
 
-  private apiUrl = '/api/products';
+  private apiUrl = `${environment.apiUrl}/api/products`;
 
   constructor(private _http: HttpClient) { }
 
-  getAllProducts(limit?: number, offset?: number) {
+  getAllProducts(limit?: number, offset?: number): Observable<Product[]> {
 
     let params = new HttpParams();
     if (limit && offset) {
       params = params.set('limit', limit);
       params = params.set('offset', offset);
     }
-    return this._http.get<Product[]>(this.apiUrl);
+    return this._http.get<Product[]>(this.apiUrl)
+      .pipe(
+        map(products => {
+          return products.map(product => {
+            return {
+              ...product,
+              taxes: product.price * .16
+            }
+          })
+        })
+      );
   }
 
   getProduct(id: string) {
