@@ -22,6 +22,7 @@ const routes: Routes = [
   { path: 'profile', component: ProfileComponent },
   { path: 'recovery', component: RecoveryComponent },
   { path: 'register', component: RegisterComponent },
+  { path: '**', component: NotFoundComponent },
 ];
 
 @NgModule({
