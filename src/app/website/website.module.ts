@@ -4,7 +4,6 @@ import { SwiperModule } from 'swiper/angular';
 // Routing
 import { WebsiteRoutingModule } from './website-routing.module';
 // Pages
-import { CategoryComponent } from './pages/category/category.component';
 import { HomeComponent } from '././pages/home/home.component';
 import { LoginComponent } from '././pages/login/login.component';
 import { MycartComponent } from '././pages/mycart/mycart.component';
@@ -27,7 +26,6 @@ import { SharedModule } from '../shared/shared.module';
   declarations: [
     NavComponent,
     HomeComponent,
-    CategoryComponent,
     MycartComponent,
     LoginComponent,
     RegisterComponent,
@@ -41,7 +39,7 @@ import { SharedModule } from '../shared/shared.module';
     CommonModule,
     WebsiteRoutingModule,
     SwiperModule,
-    
+
     SharedModule
   ]
 })
