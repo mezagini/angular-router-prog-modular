@@ -21,6 +21,7 @@ import { NavComponent } from './components/nav/nav.component';
 
 // Modules
 import { SharedModule } from '../shared/shared.module';
+import { QuicklinkModule } from 'ngx-quicklink';
 
 @NgModule({
   declarations: [
@@ -39,6 +40,7 @@ import { SharedModule } from '../shared/shared.module';
     CommonModule,
     WebsiteRoutingModule,
     SwiperModule,
+    QuicklinkModule,
 
     SharedModule
   ]
